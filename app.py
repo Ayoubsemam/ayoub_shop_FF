@@ -33,9 +33,11 @@ HTML_LAYOUT = """
                 <select name="pack" required>
                     <option value="" disabled selected>اختر العرض المطلوب</option>
                     <option value="100 جوهرة ($1.00)">💎 100 جوهرة ($1.00)</option>
-                    <option value="310 جوهرة ($3.00)">💎 310 جوهرة ($3.00)</option>
                     <option value="520 جوهرة ($5.00)">💎 520 جوهرة ($5.00)</option>
                     <option value="1060 جوهرة ($10.00)">💎 1060 جوهرة ($10.00)</option>
+                    <option value="2180 جوهرة ($20.00)">💎 2180 جوهرة ($20.00)</option>
+                    <option value="5600 جوهرة ($50.00)">💎 5600 جوهرة ($50.00)</option>
+                    <option value="20000 جوهرة ($180.00)">👑 20000 جوهرة ($180.00)</option>
                 </select>
                 <select name="payment" required>
                     <option value="" disabled selected>اختر طريقة الدفع</option>
@@ -61,11 +63,9 @@ def buy():
     pack = request.form.get('pack')
     payment = request.form.get('payment')
     
-    # رسالة واتساب المجهزة
     message = f"مرحباً، أريد إكمال طلب الشراء من المتجر:\n\n🆔 الـ ID: {player_id}\n💎 العرض: {pack}\n💳 طريقة الدفع المختارة: {payment}\n\nيرجى إرسال معلومات الدفع وإكمال الطلب."
     encoded_message = urllib.parse.quote(message)
     
-    # توجيه المشتري لواتساب
     whatsapp_url = f"https://wa.me/{WHATSAPP_NUMBER}?text={encoded_message}"
     return redirect(whatsapp_url)
 
