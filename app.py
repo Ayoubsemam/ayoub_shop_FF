@@ -1,6 +1,10 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, redirect, render_template_string
+import urllib.parse
 
 app = Flask(__name__)
+
+# رقم واتساب الخاص بك شامل رمز الدولة
+WHATSAPP_NUMBER = "213559188468"
 
 HTML_LAYOUT = """
 <!DOCTYPE html>
@@ -10,52 +14,36 @@ HTML_LAYOUT = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>متجر ayoub_shop_FF</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; text-align: center; padding: 20px; margin: 0; }
-        h1 { color: #ff4655; font-size: 24px; margin-top: 20px; }
-        p { color: #94a3b8; }
+        body { font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; text-align: center; padding: 20px; }
         .container { max-width: 450px; margin: 0 auto; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        .card h3 { color: #38bdf8; margin-top: 0; }
-        input, select { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #475569; background-color: #0f172a; color: #fff; font-size: 14px; box-sizing: border-box; }
-        button { background: #ff4655; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; width: 90%; transition: 0.3s; }
-        button:hover { background: #e03e4d; }
-        .success-box { background: #14532d; border: 1px solid #22c55e; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #4ade80; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        h1 { color: #ff4655; font-size: 22px; }
+        input, select { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background-color: #0f172a; color: #fff; font-size: 14px; box-sizing: border-box; }
+        button { background: #25d366; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; width: 90%; transition: 0.3s; }
+        button:hover { background: #128c7e; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 متجر ayoub_shop_FF شحن الجواهر</h1>
-        <p>شحن جواهر Free Fire عن طريق الـ ID بسرعة وأمان</p>
-
-        {% if success %}
-        <div class="success-box">
-            ✅ تم استلام طلبك بنجاح! سيتم الشحن الحساب برقم ID: <b>{{ player_id }}</b> قريباً.
-        </div>
-        {% endif %}
-
+        <h1>🎮 متجر ayoub_shop_FF لشحن الجواهر</h1>
+        <p style="color: #94a3b8;">اختر العرض وأدخل ID لإتمام الدفع عبر واتساب</p>
         <div class="card">
             <form action="/buy" method="POST">
-                <h3>تعبئة معلومات الشحن</h3>
-                
                 <input type="text" name="player_id" placeholder="أدخل ID الحساب (Player ID)" required>
-                
                 <select name="pack" required>
                     <option value="" disabled selected>اختر العرض المطلوب</option>
-                    <option value="100 الجواهر - $1.00">💎 100 جوهرة ($1.00)</option>
-                    <option value="310 الجواهر - $3.00">💎 310 جوهرة ($3.00)</option>
-                    <option value="520 الجواهر - $5.00">💎 520 جوهرة ($5.00)</option>
-                    <option value="1060 الجواهر - $10.00">💎 1060 جوهرة ($10.00)</option>
+                    <option value="100 جوهرة ($1.00)">💎 100 جوهرة ($1.00)</option>
+                    <option value="310 جوهرة ($3.00)">💎 310 جوهرة ($3.00)</option>
+                    <option value="520 جوهرة ($5.00)">💎 520 جوهرة ($5.00)</option>
+                    <option value="1060 جوهرة ($10.00)">💎 1060 جوهرة ($10.00)</option>
                 </select>
-
                 <select name="payment" required>
                     <option value="" disabled selected>اختر طريقة الدفع</option>
-                    <option value="CCP / BaridiMob">CCP / BaridiMob</option>
+                    <option value="BaridiMob / CCP">BaridiMob / CCP</option>
                     <option value="Flexy">Flexy</option>
                     <option value="Binance / USDT">Binance / USDT</option>
                 </select>
-
-                <br><br>
-                <button type="submit">تأكيد طلب الشراء</button>
+                <button type="submit">متابعة الشراء عبر WhatsApp 💬</button>
             </form>
         </div>
     </div>
@@ -65,7 +53,7 @@ HTML_LAYOUT = """
 
 @app.route('/')
 def home():
-    return render_template_string(HTML_LAYOUT, success=False)
+    return render_template_string(HTML_LAYOUT)
 
 @app.route('/buy', methods=['POST'])
 def buy():
@@ -73,10 +61,13 @@ def buy():
     pack = request.form.get('pack')
     payment = request.form.get('payment')
     
-    # طباعة الطلب في اللوج لترصد الطلبات
-    print(f"[NEW ORDER] ID: {player_id} | Pack: {pack} | Payment: {payment}")
+    # رسالة واتساب المجهزة
+    message = f"مرحباً، أريد إكمال طلب الشراء من المتجر:\n\n🆔 الـ ID: {player_id}\n💎 العرض: {pack}\n💳 طريقة الدفع المختارة: {payment}\n\nيرجى إرسال معلومات الدفع وإكمال الطلب."
+    encoded_message = urllib.parse.quote(message)
     
-    return render_template_string(HTML_LAYOUT, success=True, player_id=player_id)
+    # توجيه المشتري لواتساب
+    whatsapp_url = f"https://wa.me/{WHATSAPP_NUMBER}?text={encoded_message}"
+    return redirect(whatsapp_url)
 
 if __name__ == '__main__':
     app.run()
