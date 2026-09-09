@@ -1,11 +1,16 @@
-from flask import Flask, request, redirect, render_template_string
+from flask import Flask, request, redirect, render_template_string, jsonify
 import urllib.parse
 import os
 
 app = Flask(__name__)
 
+# رقم واتساب الخاص بك شامل رمز الدولة
 WHATSAPP_NUMBER = "213559188468"
+
+# رابط صورة الخلفية للمتجر
 BG_IMAGE_URL = "https://share.google/4cLU5w4hjNM2FhGiq"
+
+# ملف حفظ الطلبات تلقائياً
 ORDERS_FILE = "orders.txt"
 
 HTML_LAYOUT = """
@@ -14,7 +19,7 @@ HTML_LAYOUT = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ayoub_shop_FF</title>
+    <title>متجر ayoub_shop_FF</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -77,20 +82,20 @@ HTML_LAYOUT = """
 <body>
     <div class="container">
         <div class="card">
-            <h1>متجر ayoub_shop_FF</h1>
+            <h1>🎮 متجر ayoub_shop_FF</h1>
             <p>اختر العرض المناسب وأدخل الـ ID للشحن عبر واتساب</p>
             
             <form action="/buy" method="POST">
-                <input type="text" name="player_id" placeholder="أدخل ID الحساب" required>
+                <input type="text" name="player_id" placeholder="أدخل ID الحساب (Player ID)" required>
                 
                 <select name="pack" required>
                     <option value="" disabled selected>اختر العرض المطلوب</option>
-                    <option value="100 جوهرة - 220 د.ج">100 جوهرة - 220 د.ج</option>
-                    <option value="520 جوهرة - 1,100 د.ج">520 جوهرة - 1,100 د.ج</option>
-                    <option value="1060 جوهرة - 2,200 د.ج">1060 جوهرة - 2,200 د.ج</option>
-                    <option value="2180 جوهرة - 4,400 د.ج">2180 جوهرة - 4,400 د.ج</option>
-                    <option value="5600 جوهرة - 11,000 د.ج">5600 جوهرة - 11,000 د.ج</option>
-                    <option value="20000 جوهرة - 39,000 د.ج">20000 جوهرة - 39,000 د.ج</option>
+                    <option value="100 جوهرة (220 د.ج)">💎 100 جوهرة - 220 د.ج</option>
+                    <option value="520 جوهرة (1100 د.ج)">💎 520 جوهرة - 1,100 د.ج</option>
+                    <option value="1060 جوهرة (2200 د.ج)">💎 1060 جوهرة - 2,200 د.ج</option>
+                    <option value="2180 جوهرة (4400 د.ج)">💎 2180 جوهرة - 4,400 د.ج</option>
+                    <option value="5600 جوهرة (11000 د.ج)">💎 5600 جوهرة - 11,000 د.ج</option>
+                    <option value="20000 جوهرة (39000 د.ج)">👑 20000 جوهرة - 39,000 د.ج</option>
                 </select>
                 
                 <select name="payment" required>
@@ -100,7 +105,7 @@ HTML_LAYOUT = """
                     <option value="Binance / USDT">Binance / USDT</option>
                 </select>
                 
-                <button type="submit">متابعة الشراء عبر WhatsApp</button>
+                <button type="submit">متابعة الشراء عبر WhatsApp 💬</button>
             </form>
         </div>
     </div>
@@ -118,15 +123,26 @@ def buy():
     pack = request.form.get('pack')
     payment = request.form.get('payment')
     
+    # حفظ الطلب تلقائياً في ملف نصي كأرشفة للبوت
     order_info = f"ID: {player_id} | Pack: {pack} | Payment: {payment}\n"
     with open(ORDERS_FILE, "a", encoding="utf-8") as f:
         f.write(order_info)
     
-    message = f"مرحباً، أريد إكمال طلب الشراء:\n\nID: {player_id}\nالعرض: {pack}\nطريقة الدفع: {payment}"
+    # صياغة رسالة الواتساب التلقائية
+    message = f"مرحباً، أريد إكمال طلب الشراء من المتجر:\n\n🆔 الـ ID: {player_id}\n💎 العرض: {pack}\n💳 طريقة الدفع المختارة: {payment}\n\nيرجى إرسال معلومات الدفع وإكمال الطلب."
     encoded_message = urllib.parse.quote(message)
     
     whatsapp_url = f"https://wa.me/{WHATSAPP_NUMBER}?text={encoded_message}"
     return redirect(whatsapp_url)
+
+# مسار خاص لمراقبة الطلبات البرمجية (يمكن ربطه ببوت واتساب لاحقاً)
+@app.route('/api/orders', methods=['GET'])
+def get_orders():
+    if os.path.exists(ORDERS_FILE):
+        with open(ORDERS_FILE, "r", encoding="utf-8") as f:
+            content = f.readlines()
+        return jsonify({"status": "success", "orders": content})
+    return jsonify({"status": "no_orders", "orders": []})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
